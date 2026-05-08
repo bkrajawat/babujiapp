@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>बाबूजी v10.0 - राजस्थान सरकार</title>
+    <style>
+        :root { --main: #003366; --gold: #D4AF37; --bg: #f4f7f6; }
+        body { font-family: 'Segoe UI', Arial, sans-serif; background: var(--bg); margin: 0; padding: 0; color: #333; }
+        .header { background: var(--main); color: white; padding: 15px; text-align: center; border-bottom: 4px solid var(--gold); }
+        .container { max-width: 900px; margin: auto; padding: 10px; }
+        .card { background: white; padding: 15px; border-radius: 10px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); margin-bottom: 15px; }
+        .tabs { display: flex; gap: 5px; margin-bottom: 10px; }
+        .tab { flex: 1; padding: 12px; text-align: center; background: #ccc; cursor: pointer; font-weight: bold; border-radius: 5px; }
+        .tab.active { background: var(--main); color: white; }
+        input, select, textarea { width: 100%; padding: 10px; margin: 5px 0; border: 1px solid #ccc; border-radius: 5px; box-sizing: border-box; font-size: 14px; }
+        .p-row { background: #fdfdfd; padding: 15px; border: 1px solid #ddd; border-radius: 8px; margin-bottom: 15px; position: relative; }
+        .btn { background: var(--main); color: white; padding: 12px; border: none; border-radius: 5px; width: 100%; font-size: 16px; font-weight: bold; cursor: pointer; margin-top: 5px; }
+        .add-btn { background: #28a745; width: auto; padding: 8px 20px; font-size: 14px; }
+        .remove-btn { background: #d32f2f; color: white; border: none; padding: 5px 10px; border-radius: 3px; position: absolute; top: 10px; right: 10px; cursor: pointer; z-index: 10; }
+        #preview { background: white; padding: 30px; display: none; margin-top: 20px; border: 1px solid #999; line-height: 1.6; color: #000; }
+        .hidden { display: none !important; }
+        label { font-size: 12px; font-weight: bold; color: #666; margin-top: 5px; display: block; }
+        @media print { .no-print { display: none !important; } #preview { display: block !important; border: none !important; padding: 0 !important; width: 100%; } }
+    </style>
+</head>
+<body>
+
+<div class="header no-print">
+    <h1 style="margin:0; font-size: 20px;">👨‍💼 बाबूजी ऐप v10.0</h1>
+    <p style="margin:2px 0 0; font-size: 12px;">क्लिक एवं कैलकुलेशन फिक्स्ड</p>
+</div>
+
+<div class="container no-print">
+    <div class="tabs">
+        <div id="btn-normal" class="tab active" onclick="setAppMode('normal')">सामान्य अवकाश</div>
+        <div id="btn-surrender" class="tab" onclick="setAppMode('surrender')">समर्पित अवकाश</div>
+    </div>
+
+    <div class="card">
+        <button style="float:right; font-size: 10px;" onclick="clearStorage()">डेटा साफ़ करें</button>
+        <h3>🏢 कार्यालय विवरण</h3>
+        <input type="text" id="off_name" placeholder="कार्यालय का नाम" oninput="saveData()">
+        <div style="display:flex; gap:10px;">
+            <div style="flex:1;"><label>पत्रांक</label><input type="text" id="pre_no" placeholder="प.1/स्था/..." oninput="saveData()"></div>
+            <div style="flex:1;"><label>आदेश दिनांक</label><input type="text" id="ord_date" oninput="saveData()"></div>
+            <div id="da-box" class="hidden" style="flex:0.5;"><label>DA %</label><input type="number" id="da_rate" value="50" oninput="updateAllCalculations()"></div>
+        </div>
+        <input type="text" id="signer" placeholder="अधिकारी का पदनाम" oninput="saveData()">
+    </div>
+
+    <div class="card">
+        <h3>👥 कार्मिक एवं गणना</h3>
+        <div id="staff-list">
+            <div class="p-row">
+                <button class="remove-btn" onclick="removeRow(this)">X हटाएँ</button>
+                <div style="display:flex; gap:8px;">
+                    <input type="text" class="inp-n" placeholder="कार्मिक का नाम" oninput="saveData()">
+                    <input type="text" class="inp-p" placeholder="पदनाम" oninput="saveData()">
+                </div>
+                
+                <div class="sec-normal" style="display:flex; gap:8px; flex-wrap: wrap; margin-top:10px; background:#e3f2fd; padding:10px; border-radius:5px;">
+                    <div style="flex:1.5;">
+                        <select class="inp-type" onchange="updateRuleLabel(this)">
+                            <option value="उपार्जित अवकाश" data-rule="नियम 91">उपार्जित (PL)</option>
+                            <option value="रूपांतरित अवकाश" data-rule="नियम 93(2)">रूपांतरित (Commuted)</option>
+                            <option value="अर्ध वेतन अवकाश" data-rule="नियम 93">अर्ध वेतन (HPL)</option>
+                        </select>
+                    </div>
+                    <div style="flex:1;"><input type="text" class="inp-rule" value="नियम 91" readonly style="background:#eee;"></div>
+                    <div style="flex:1;"><label>से</label><input type="date" class="inp-f" oninput="doDaysCalc(this)"></div>
+                    <div style="flex:1;"><label>तक</label><input type="date" class="inp-t" oninput="doDaysCalc(this)"></div>
+                    <div style="flex:0.5;"><label>दिन</label><input type="text" class="inp-d" readonly style="background:#ddd; font-weight:bold;"></div>
+                </div>
+
+                <div class="sec-surrender hidden" style="margin-top:10px; background:#fff3e0; padding:10px; border-radius:5px;">
+                    <div style="display:flex; gap:10px;">
+                        <div style="flex:1;"><label>मूल वेतन</label><input type="number" class="inp-basic" placeholder="Basic" oninput="doSurCalc(this)"></div>
+                        <div style="flex:1;"><label>देय राशि (15 दिन)</label><input type="text" class="inp-amt" readonly style="color:red; font-weight:bold;"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <button class="btn add-btn" onclick="addNewStaff()">+ अन्य कार्मिक जोड़ें</button>
+    </div>
+
+    <div class="card">
+        <label>प्रतिलिपि (Copies):</label>
+        <textarea id="copy_to" rows="3" oninput="saveData()">1. संबंधित कार्मिक।\n2. कार्यालय प्रति।</textarea>
+        <button class="btn" onclick="generateFinalOrder()">✨ आदेश तैयार करें</button>
+    </div>
+</div>
+
+<div class="container">
+    <div id="preview" contenteditable="true"></div>
+    <button id="print-btn" class="btn no-print" style="display:none; background:#d32f2f; margin-bottom:50px;" onclick="window.print()">🖨️ प्रिंट करें</button>
+</div>
+
+<script>
+    let appMode = 'normal';
+
+    window.onload = function() {
+        document.getElementById('ord_date').value = new Date().toLocaleDateString('en-GB');
+        loadSavedData();
+    };
+
+    function setAppMode(m) {
+        appMode = m;
+        document.getElementById('btn-normal').className = (m === 'normal' ? 'tab active' : 'tab');
+        document.getElementById('btn-surrender').className = (m === 'surrender' ? 'tab active' : 'tab');
+        
+        document.querySelectorAll('.sec-normal').forEach(el => m === 'normal' ? el.classList.remove('hidden') : el.classList.add('hidden'));
+        document.querySelectorAll('.sec-surrender').forEach(el => m === 'surrender' ? el.classList.remove('hidden') : el.classList.add('hidden'));
+        document.getElementById('da-box').className = (m === 'surrender' ? '' : 'hidden');
+        saveData();
+    }
+
+    function updateRuleLabel(sel) {
+        const row = sel.closest('.p-row');
+        row.querySelector('.inp-rule').value = sel.options[sel.selectedIndex].getAttribute('data-rule');
+        saveData();
+    }
+
+    function doDaysCalc(inp) {
+        const row = inp.closest('.p-row');
+        const f = new Date(row.querySelector('.inp-f').value);
+        const t = new Date(row.querySelector('.inp-t').value);
+        if (f && t && t >= f) {
+            row.querySelector('.inp-d').value = Math.ceil((t - f) / 86400000) + 1;
+        }
+        saveData();
+    }
+
+    function doSurCalc(inp) {
+        const row = inp.closest('.p-row');
+        const basic = parseFloat(row.querySelector('.inp-basic').value) || 0;
+        const da = parseFloat(document.getElementById('da_rate').value) || 0;
+        const total = Math.round(((basic + (basic * da / 100)) / 30) * 15);
+        row.querySelector('.inp-amt').value = "₹ " + total;
+        saveData();
+    }
+
+    function updateAllCalculations() {
+        document.querySelectorAll('.inp-basic').forEach(el => doSurCalc(el));
+    }
+
+    function addNewStaff() {
+        const list = document.getElementById('staff-list');
+        const first = list.querySelector('.p-row');
+        const clone = first.cloneNode(true);
+        clone.querySelectorAll('input').forEach(i => i.value = '');
+        clone.querySelector('.inp-rule').value = "नियम 91";
+        list.appendChild(clone);
+        setAppMode(appMode);
+    }
+
+    function removeRow(btn) {
+        if(document.querySelectorAll('.p-row').length > 1) {
+            btn.parentElement.remove();
+            saveData();
+        } else {
+            alert("कम से कम एक कार्मिक होना अनिवार्य है।");
+        }
+    }
+
+    function saveData() {
+        const pkg = {
+            m: appMode, off: document.getElementById('off_name').value,
+            pre: document.getElementById('pre_no').value, sig: document.getElementById('signer').value,
+            copy: document.getElementById('copy_to').value, da: document.getElementById('da_rate').value,
+            staff: []
+        };
+        document.querySelectorAll('.p-row').forEach(r => {
+            pkg.staff.push({
+                n: r.querySelector('.inp-n').value, p: r.querySelector('.inp-p').value,
+                f: r.querySelector('.inp-f').value, t: r.querySelector('.inp-t').value,
+                d: r.querySelector('.inp-d').value, b: r.querySelector('.inp-basic').value,
+                type: r.querySelector('.inp-type').value, rule: r.querySelector('.inp-rule').value
+            });
+        });
+        localStorage.setItem('babuji_v10_db', JSON.stringify(pkg));
+    }
+
+    function loadSavedData() {
+        const raw = localStorage.getItem('babuji_v10_db');
+        if (!raw) return;
+        const db = JSON.parse(raw);
+        document.getElementById('off_name').value = db.off || "";
+        document.getElementById('pre_no').value = db.pre || "";
+        document.getElementById('signer').value = db.sig || "";
+        document.getElementById('copy_to').value = db.copy || "";
+        document.getElementById('da_rate').value = db.da || 50;
+        
+        const list = document.getElementById('staff-list');
+        list.innerHTML = "";
+        db.staff.forEach(s => {
+            addNewStaff();
+            const last = list.lastElementChild;
+            last.querySelector('.inp-n').value = s.n; last.querySelector('.inp-p').value = s.p;
+            last.querySelector('.inp-f').value = s.f; last.querySelector('.inp-t').value = s.t;
+            last.querySelector('.inp-d').value = s.d; last.querySelector('.inp-b').value = s.b;
+            last.querySelector('.inp-type').value = s.type; last.querySelector('.inp-rule').value = s.rule;
+            if(s.b) doSurCalc(last.querySelector('.inp-b'));
+        });
+        setAppMode(db.m || 'normal');
+    }
+
+    function generateFinalOrder() {
+        const off = document.getElementById('off_name').value || "[कार्यालय का नाम]";
+        let table = <table border="1" style="width:100%; border-collapse:collapse; margin-top:15px; font-size:14px; text-align:center;">;
+        
+        if(appMode === 'normal') {
+            table += <tr style="background:#f2f2f2;"><th>क्र.</th><th>नाम व पद</th><th>अवकाश प्रकार</th><th>नियम</th><th>अवधि</th><th>दिन</th></tr>;
+            document.querySelectorAll('.p-row').forEach((r, i) => {
+                table += <tr><td>${i+1}</td><td>${r.querySelector('.inp-n').value}<br>${r.querySelector('.inp-p').value}</td><td>${r.querySelector('.inp-type').value}</td><td>${r.querySelector('.inp-rule').value}</td><td>${r.querySelector('.inp-f').value} से ${r.querySelector('.inp-t').value}</td><td>${r.querySelector('.inp-d').value}</td></tr>;
+            });
+        } else {
+            table += <tr style="background:#f2f2f2;"><th>क्र.</th><th>नाम व पद</th><th>मूल वेतन</th><th>DA (${document.getElementById('da_rate').value}%)</th><th>भुगतान राशि (15 दिन)</th></tr>;
+            document.querySelectorAll('.p-row').forEach((r, i) => {
+                const b = parseFloat(r.querySelector('.inp-basic').value) || 0;
+                const daAmt = Math.round(b * (document.getElementById('da_rate').value/100));
+                table += <tr><td>${i+1}</td><td>${r.querySelector('.inp-n').value}<br>${r.querySelector('.inp-p').value}</td><td>${b}</td><td>${daAmt}</td><td><b>${r.querySelector('.inp-amt').value}</b></td></tr>;
+            });
+        }
+        table += </table>;
+
+        document.getElementById('preview').innerHTML = `
+            <div style="text-align:center;"><b>राजस्थान सरकार</b><br><b style="font-size:18px; color:#003366;">${off}</b></div>
+            <div style="display:flex; justify-content:space-between; margin-top:20px;">
+                <span>${document.getElementById('pre_no').value}</span>
+                <span>दिनांक: ${document.getElementById('ord_date').value}</span>
+            </div>
+            <div style="text-align:center; margin:25px 0;"><b><u>:: कार्यालय आदेश ::</u></b></div>
+            <p>राजस्थान सेवा नियमों के प्रावधानों के अंतर्गत निम्नलिखित कार्मिकों को उनके नाम के सम्मुख अंकित विवरणानुसार ${appMode==='normal'?'अवकाश':'समर्पित अवकाश भुगतान'} की एतद् द्वारा स्वीकृति प्रदान की जाती है:</p>
+            ${table}
+            <div style="margin-top:50px; float:right; text-align:center; min-width:250px;"><b>(${document.getElementById('signer').value})</b><br>${off}</div>
+            <div style="clear:both; padding-top:30px; font-size:12px; border-top:1px solid #ccc;"><b>प्रतिलिपि सूचनार्थ एवं आवश्यक कार्यवाही हेतु:-</b><br>${document.getElementById('copy_to').value.replace(/\n/g, '<br>')}</div>
+        `;
+        document.getElementById('preview').style.display = 'block';
+        document.getElementById('print-btn').style.display = 'block';
+        window.scrollTo(0, document.body.scrollHeight);
+    }
+
+    function clearStorage() { if(confirm("क्या आप सारा डेटा हटाना चाहते हैं?")) { localStorage.clear(); location.reload(); } }
+</script>
+</body>
+</html>
