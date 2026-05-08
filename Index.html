@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Babuji App v9.5 - Rajasthan Govt (A4 Fit)</title>
+    <style>
+        :root { --main: #003366; --gold: #D4AF37; --bg: #f4f7f6; }
+        body { font-family: 'Segoe UI', Arial, sans-serif; background: var(--bg); margin: 0; padding: 0; color: #333; }
+        .header { background: var(--main); color: white; padding: 15px; text-align: center; border-bottom: 4px solid var(--gold); }
+        .container { max-width: 950px; margin: auto; padding: 15px; }
+        .card { background: white; padding: 15px; border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); margin-bottom: 15px; }
+        .tabs { display: flex; gap: 5px; margin-bottom: 15px; }
+        .tab { flex: 1; padding: 12px; text-align: center; background: #ddd; cursor: pointer; font-weight: bold; border-radius: 8px 8px 0 0; }
+        .tab.active { background: var(--main); color: white; }
+        h3 { color: var(--main); border-bottom: 2px solid var(--gold); padding-bottom: 5px; margin-top: 0; font-size: 18px; }
+        label { display: block; margin-top: 8px; font-weight: bold; font-size: 12px; }
+        input, select, textarea { width: 100%; padding: 10px; margin: 5px 0; border: 1px solid #ccc; border-radius: 6px; box-sizing: border-box; font-size: 14px; }
+        .p-row { background: #f9f9f9; padding: 12px; border-radius: 8px; margin-bottom: 10px; border: 1px solid #eee; position: relative; }
+        .btn { background: var(--main); color: white; padding: 12px; border: none; border-radius: 6px; width: 100%; font-size: 16px; font-weight: bold; cursor: pointer; }
+        .add-btn { background: #28a745; margin-bottom: 10px; font-size: 13px; padding: 8px; }
+        .remove-btn { background: #dc3545; color: white; border: none; padding: 4px 8px; border-radius: 4px; position: absolute; top: 8px; right: 8px; cursor: pointer; }
+        
+        /* Preview & Print Styling */
+        #preview { 
+            background: white; 
+            padding: 30px 40px; 
+            border: 1px solid #ccc; 
+            display: none; 
+            margin-top: 20px; 
+            font-family: 'Times New Roman', serif; 
+            line-height: 1.4; 
+            color: black; 
+            font-size: 15px;
+            box-sizing: border-box;
+            width: 100%;
+        }
+
+        @media print {
+            @page { size: A4; margin: 15mm; }
+            .no-print { display: none !important; }
+            body { background: white; }
+            .container { width: 100%; max-width: 100%; padding: 0; margin: 0; }
+            #preview { 
+                display: block !important; 
+                border: none !important; 
+                padding: 0 !important; 
+                margin: 0 !important; 
+                font-size: 13px; /* Slightly smaller for A4 fit */
+                width: 100%;
+            }
+            table { width: 100% !important; border-collapse: collapse; table-layout: fixed; word-wrap: break-word; }
+            th, td { padding: 4px !important; border: 1px solid black !important; font-size: 12px; }
+            .order-table-header { font-size: 16px !important; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="header no-print">
+    <h1 style="margin:0; font-size: 22px;">👨‍💼 बाबूजी (v9.5)</h1>
+    <p style="margin:5px 0 0;">मास्टर RSR अवकाश - A4 प्रिंट ऑप्टिमाइज्ड</p>
+</div>
+
+<div class="container no-print">
+    <div class="tabs">
+        <div class="tab active" onclick="switchTab('normal')">सामान्य अवकाश</div>
+        <div class="tab" onclick="switchTab('surrender')">समर्पित अवकाश (भुगतान)</div>
+    </div>
+
+    <div class="card">
+        <h3>🏢 कार्यालय एवं मास्टर सेटिंग्स</h3>
+        <input type="text" id="off" placeholder="कार्यालय का नाम">
+        <div style="display:flex; gap:10px;">
+            <div style="flex:1.5;"><label>पत्रांक</label><input type="text" id="pre" placeholder="प.1/स्था/2026/"></div>
+            <div style="flex:1;"><label>आदेश दिनांक</label><input type="text" id="order_date"></div>
+            <div class="surrender-fields" style="display:none; flex:0.8;"><label>DA %</label><input type="number" id="master_da" value="50" oninput="allSurCalc()"></div>
+        </div>
+        <div class="surrender-fields" style="display:none; gap:10px;">
+            <div style="flex:1;"><label>वित्तवर्ष</label><input type="text" id="fin_year" value="2026-27"></div>
+            <div style="flex:1;"><label>भुगतान माह</label><input type="text" id="pay_month" placeholder="उदा: मई"></div>
+        </div>
+        <input type="text" id="signer_title" placeholder="अधिकारी का पदनाम">
+    </div>
+
+    <div class="card">
+        <h3>👥 कार्मिक एवं अवकाश विवरण</h3>
+        <div id="p-list">
+            <div class="p-row">
+                <button class="remove-btn no-print" onclick="this.parentElement.remove()">X</button>
+                <div style="display:flex; gap:10px; margin-bottom:5px;">
+                    <input type="text" class="n" placeholder="कार्मिक का नाम" style="flex:2;">
+                    <input type="text" class="p" placeholder="पदनाम" style="flex:1;">
+                </div>
+                
+                <div class="normal-fields" style="display:flex; flex-wrap: wrap; gap:10px; background: #f0f4f8; padding: 10px; border-radius: 6px;">
+                    <div style="flex:1.2; min-width: 140px;">
+                        <label>अवकाश प्रकार</label>
+                        <select class="lv-type" onchange="updateRule(this)">
+                            <option value="उपार्जित अवकाश" data-rule="नियम 91">उपार्जित (PL)</option>
+                            <option value="रूपांतरित अवकाश" data-rule="नियम 93">रूपांतरित (Commuted)</option>
+                            <option value="अर्ध वेतन अवकाश" data-rule="नियम 93">अर्ध वेतन (HPL)</option>
+                            <option value="मातृत्व अवकाश" data-rule="नियम 103">मातृत्व (ML)</option>
+                            <option value="पितृत्व अवकाश" data-rule="नियम 103A">पितृत्व (PL)</option>
+                            <option value="अवैतनिक अवकाश" data-rule="नियम 96">अवैतनिक (LWP)</option>
+                            <option value="असाधारण अवकाश" data-rule="नियम 96">असाधारण</option>
+                        </select>
+                    </div>
+                    <div style="flex:0.6;"><label>नियम</label><input type="text" class="lv-rule" value="नियम 91" readonly style="background:#eee;"></div>
+                    <div style="flex:0.8;"><label>से</label><input type="date" class="f" oninput="calc(this)"></div>
+                    <div style="flex:0.8;"><label>तक</label><input type="date" class="t" oninput="calc(this)"></div>
+                    <div style="flex:0.3;"><label>दिन</label><input type="text" class="d" readonly></div>
+                </div>
+
+                <div class="surrender-fields" style="display:none; flex-wrap: wrap; gap:8px; background: #eef; padding: 10px; border-radius: 5px; margin-top: 5px;">
+                    <div style="flex:1;"><label>जमा PL</label><input type="number" class="total_lv" oninput="surCalc(this)"></div>
+                    <div style="flex:1;"><label>मूल वेतन</label><input type="number" class="basic" oninput="surCalc(this)"></div>
+                    <div style="flex:1;"><label>DA राशि</label><input type="text" class="da_amt_val" readonly></div>
+                    <div style="flex:1;"><label>कुल भुगतान</label><input type="text" class="pay_amt" readonly style="font-weight:bold;"></div>
+                    <input type="hidden" class="rem_lv">
+                </div>
+            </div>
+        </div>
+        <button class="btn add-btn" onclick="addP()">+ अन्य कार्मिक</button>
+    </div>
+
+    <div class="card">
+        <h3>📂 प्रतिलिपि एवं आदेश</h3>
+        <textarea id="copies" rows="4">1. उपकोष कार्यालय ....................
+2. लेखा प्रभाग / संस्थापन शाखा
+3. सम्बंधित कर्मचारी
+4. कार्यालय रक्षित पत्रावली</textarea>
+        <button class="btn" onclick="gen()">आदेश तैयार करें</button>
+    </div>
+</div>
+
+<div class="container">
+    <div id="preview" contenteditable="true"></div>
+    <button id="pb" class="btn no-print" style="display:none; background:#d32f2f; margin:20px 0;" onclick="window.print()">🖨️ प्रिंट / PDF सेव करें</button>
+</div>
+
+<script>
+    let mode = 'normal';
+    document.getElementById('order_date').value = new Date().toLocaleDateString('en-GB');
+
+    function switchTab(m) {
+        mode = m;
+        document.querySelectorAll('.tab').forEach((t, i) => t.classList.toggle('active', (i === 0 && m === 'normal') || (i === 1 && m === 'surrender')));
+        document.querySelectorAll('.normal-fields').forEach(el => el.style.display = m === 'normal' ? 'flex' : 'none');
+        document.querySelectorAll('.surrender-fields').forEach(el => el.style.display = m === 'surrender' ? 'flex' : 'none');
+    }
+
+    function updateRule(el) {
+        const row = el.closest('.p-row');
+        row.querySelector('.lv-rule').value = el.options[el.selectedIndex].getAttribute('data-rule');
+    }
+
+    function allSurCalc() {
+        document.querySelectorAll('.p-row').forEach(row => { if(row.querySelector('.basic').value) surCalc(row.querySelector('.basic')); });
+    }
+
+    function surCalc(el) {
+        const row = el.closest('.p-row');
+        const basic = parseFloat(row.querySelector('.basic').value) || 0;
+        const daP = parseFloat(document.getElementById('master_da').value) || 0;
+        const daAmt = Math.round((basic * daP) / 100);
+        const finalPay = Math.round(((basic + daAmt) / 30) * 15);
+        row.querySelector('.da_amt_val').value = "₹ " + daAmt;
+        row.querySelector('.pay_amt').value = "₹ " + finalPay;
+        row.querySelector('.rem_lv').value = (parseInt(row.querySelector('.total_lv').value) || 0) - 15;
+    }
+
+    function calc(el) {
+        const row = el.closest('.p-row');
+        const s = new Date(row.querySelector('.f').value), e = new Date(row.querySelector('.t').value);
+        if (s && e && e >= s) row.querySelector('.d').value = (Math.ceil((e - s) / 86400000) + 1);
+    }
+
+    function addP() {
+        const container = document.getElementById('p-list');
+        const newRow = container.firstElementChild.cloneNode(true);
+        newRow.querySelectorAll('input').forEach(i => i.value = '');
+        newRow.querySelector('.lv-rule').value = "नियम 91";
+        container.appendChild(newRow);
+        switchTab(mode);
+    }
+
+    function gen() {
+        const off = document.getElementById('off').value || "[कार्यालय का नाम]";
+        const pre = document.getElementById('pre').value || "क्रमांक:";
+        const date = document.getElementById('order_date').value;
+        const sig = document.getElementById('signer_title').value || "";
+        
+        let tableHTML = mode === 'normal' ? 
+            `<table style="width:100%; border-collapse:collapse; margin-top:10px;">
+                <tr style="background:#f2f2f2;">
+                    <th style="width:30px;">क्र.</th>
+                    <th>नाम व पदनाम</th>
+                    <th style="width:100px;">अवकाश</th>
+                    <th style="width:80px;">नियम</th>
+                    <th style="width:140px;">अवधि</th>
+                    <th style="width:40px;">दिन</th>
+                </tr>` :
+            `<table style="width:100%; border-collapse:collapse; margin-top:10px;">
+                <tr style="background:#f2f2f2;">
+                    <th style="width:30px;">क्र.</th>
+                    <th>नाम व पद</th>
+                    <th>मूल वेतन</th>
+                    <th>DA</th>
+                    <th>भुगतान</th>
+                    <th>जमा</th>
+                    <th>शेष</th>
+                </tr>`;
+
+        document.querySelectorAll('.p-row').forEach((r, i) => {
+            const n = r.querySelector('.n').value, p = r.querySelector('.p').value;
+            if(mode === 'normal') {
+                const from = r.querySelector('.f').value ? new Date(r.querySelector('.f').value).toLocaleDateString('en-GB') : "";
+                const to = r.querySelector('.t').value ? new Date(r.querySelector('.t').value).toLocaleDateString('en-GB') : "";
+                tableHTML += `<tr><td style="text-align:center;">${i+1}</td><td>${n}, ${p}</td><td>${r.querySelector('.lv-type').value}</td><td style="text-align:center;">${r.querySelector('.lv-rule').value}</td><td style="text-align:center;">${from} से ${to}</td><td style="text-align:center;">${r.querySelector('.d').value}</td></tr>`;
+            } else {
+                tableHTML += `<tr><td style="text-align:center;">${i+1}</td><td>${n}, ${p}</td><td style="text-align:center;">${r.querySelector('.basic').value}</td><td style="text-align:center;">${r.querySelector('.da_amt_val').value}</td><td style="text-align:center;"><b>${r.querySelector('.pay_amt').value}</b></td><td style="text-align:center;">${r.querySelector('.total_lv').value}</td><td style="text-align:center;">${r.querySelector('.rem_lv').value}</td></tr>`;
+            }
+        });
+        tableHTML += `</table>`;
+
+        const bodyTxt = mode === 'normal' ? `राजस्थान सेवा नियमों के अंतर्गत निम्नलिखित कार्मिकों को उनके नाम के सम्मुख अंकित विवरणानुसार अवकाश स्वीकृत किया जाता है:` : 
+            `राजस्थान सेवा नियम 91 के अंतर्गत वित्तवर्ष ${document.getElementById('fin_year').value} के माह ${document.getElementById('pay_month').value || "___"} में निम्नलिखित कार्मिकों को 15 दिवस के उपार्जित अवकाश के एवज में नगद भुगतान की स्वीकृति प्रदान की जाती है:`;
+
+        document.getElementById('preview').innerHTML = `
+            <div style="text-align:center; font-weight:bold; font-size:18px;" class="order-table-header">राजस्थान सरकार<br>${off}</div>
+            <div style="display:flex; justify-content:space-between; margin-top:20px;"><span>${pre}</span><span>दिनांक: ${date}</span></div>
+            <div style="text-align:center; font-weight:bold; text-decoration:underline; margin:15px 0; font-size:17px;">:: कार्यालय आदेश ::</div>
+            <p style="text-align:justify; margin-bottom:10px;">${bodyTxt}</p>${tableHTML}
+            <p style="margin-top:10px;">${mode==='surrender'?'उक्त भुगतान हेतु कार्मिक के अवकाश खाते में से 15 दिवस की कटौती कर दी गई है।':'अवकाश काल में मुख्यालय यथावत रहेगा एवं नियमानुसार अवकाश वेतन देय होगा।'}</p>
+            <div style="margin-top:30px; float:right; text-align:right; font-weight:bold; min-width:200px;"><br>${sig}<br>${off}</div>
+            <div style="clear:both;"></div>
+            <div style="margin-top:20px; font-size:12px; border-top: 1px solid #000; padding-top: 5px;"><b>प्रतिलिपि:-</b><br>${document.getElementById('copies').value.replace(/\n/g, '<br>')}</div>
+        `;
+        document.getElementById('preview').style.display = 'block';
+        document.getElementById('pb').style.display = 'block';
+        window.scrollTo(0, document.getElementById('preview').offsetTop);
+    }
+</script>
+</body>
+</html>
